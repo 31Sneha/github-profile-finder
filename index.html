@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GitLens — GitHub Profile Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0d1117;
+  --surface:#161b22;
+  --surface2:#21262d;
+  --border:#30363d;
+  --text:#e6edf3;
+  --muted:#8b949e;
+  --accent:#58a6ff;
+  --accent2:#3fb950;
+  --accent3:#f78166;
+  --purple:#bc8cff;
+  --yellow:#e3b341;
+  --font:'Inter',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.6}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(13,17,23,0.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:60px}
+.nav-logo{font-family:var(--mono);font-weight:600;font-size:18px;color:var(--accent);letter-spacing:-0.5px}
+.nav-logo span{color:var(--text)}
+.nav-links{display:flex;gap:2rem}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:14px;transition:color 0.2s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{background:var(--accent);color:#0d1117;border:none;padding:7px 18px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);transition:opacity 0.2s}
+.nav-cta:hover{opacity:0.85}
+
+/* HERO */
+.hero{padding:7rem 2rem 5rem;text-align:center;max-width:800px;margin:0 auto;position:relative}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(88,166,255,0.1);border:1px solid rgba(88,166,255,0.25);border-radius:50px;padding:5px 14px;font-size:12px;color:var(--accent);font-family:var(--mono);margin-bottom:2rem}
+.hero-badge::before{content:'';width:6px;height:6px;background:var(--accent2);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+h1{font-size:clamp(2.2rem,6vw,4rem);font-weight:800;line-height:1.1;letter-spacing:-2px;margin-bottom:1.25rem}
+h1 .accent{color:var(--accent)}
+.hero-sub{font-size:1.1rem;color:var(--muted);max-width:520px;margin:0 auto 2.5rem;line-height:1.7}
+.hero-search{display:flex;gap:10px;max-width:500px;margin:0 auto 1rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px 6px 6px 16px;transition:border-color 0.2s}
+.hero-search:focus-within{border-color:var(--accent)}
+.hero-search input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:15px;font-family:var(--font)}
+.hero-search input::placeholder{color:var(--muted)}
+.hero-search button{background:var(--accent);color:#0d1117;border:none;border-radius:7px;padding:9px 22px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);transition:opacity 0.2s;white-space:nowrap}
+.hero-search button:hover{opacity:0.85}
+.hero-hint{font-size:12px;color:var(--muted)}
+.hero-hint span{color:var(--accent);cursor:pointer;font-family:var(--mono)}
+.hero-hint span:hover{text-decoration:underline}
+
+/* FEATURES */
+.features{padding:5rem 2rem;max-width:1100px;margin:0 auto}
+.section-label{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:3px;text-transform:uppercase;margin-bottom:0.75rem}
+.section-title{font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;letter-spacing:-1px;margin-bottom:1rem}
+.section-sub{color:var(--muted);font-size:15px;max-width:480px;margin-bottom:3rem}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.feature-card{background:var(--surface);padding:1.75rem;transition:background 0.2s}
+.feature-card:hover{background:var(--surface2)}
+.feat-icon{font-size:24px;margin-bottom:1rem}
+.feat-title{font-size:15px;font-weight:600;margin-bottom:0.5rem;color:var(--text)}
+.feat-desc{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* APP SECTION */
+.app-section{padding:3rem 2rem 5rem;max-width:1100px;margin:0 auto}
+.error-box{background:rgba(247,129,102,0.1);border:1px solid rgba(247,129,102,0.3);border-radius:8px;padding:1rem 1.25rem;color:var(--accent3);font-size:14px;margin-bottom:1.5rem;display:none}
+.loader{text-align:center;padding:3rem;color:var(--muted);font-size:14px;display:none}
+.loader-bar{width:200px;height:2px;background:var(--surface2);border-radius:2px;margin:1rem auto 0;overflow:hidden}
+.loader-bar-fill{height:100%;width:40%;background:var(--accent);border-radius:2px;animation:slide 1s infinite}
+@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(400%)}}
+
+/* PROFILE */
+.profile-grid{display:grid;grid-template-columns:300px 1fr;gap:1.5rem;margin-bottom:1.5rem}
+@media(max-width:768px){.profile-grid{grid-template-columns:1fr}}
+.profile-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;text-align:center}
+.avatar{width:100px;height:100px;border-radius:50%;border:3px solid var(--border);margin:0 auto 1rem}
+.profile-name{font-size:20px;font-weight:700;margin-bottom:4px}
+.profile-login{font-family:var(--mono);font-size:14px;color:var(--muted);margin-bottom:0.75rem}
+.profile-bio{font-size:13px;color:var(--muted);margin-bottom:1.25rem;line-height:1.6}
+.profile-meta{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);margin-bottom:1.25rem;text-align:left}
+.profile-meta-item{display:flex;align-items:center;gap:8px}
+.profile-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.25rem}
+.stat-pill{background:var(--surface2);border-radius:8px;padding:10px;text-align:center}
+.stat-pill-val{font-size:18px;font-weight:700;color:var(--text)}
+.stat-pill-label{font-size:11px;color:var(--muted);margin-top:2px}
+.profile-link{display:block;background:var(--accent);color:#0d1117;text-decoration:none;border-radius:7px;padding:9px;font-size:13px;font-weight:700;text-align:center;transition:opacity 0.2s}
+.profile-link:hover{opacity:0.85}
+
+/* RIGHT PANEL */
+.right-panel{display:flex;flex-direction:column;gap:1.5rem}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem}
+.panel-title{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:1rem;font-family:var(--mono)}
+.lang-chart-wrap{height:180px;position:relative}
+.lang-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:1rem}
+.lang-dot{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)}
+.lang-dot::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--c,#58a6ff);flex-shrink:0}
+
+/* REPOS */
+.repos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin-bottom:1.5rem}
+.repo-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;display:flex;flex-direction:column;gap:0.5rem;transition:border-color 0.2s;text-decoration:none}
+.repo-card:hover{border-color:var(--accent)}
+.repo-name{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--accent)}
+.repo-desc{font-size:13px;color:var(--muted);flex:1;line-height:1.5}
+.repo-footer{display:flex;gap:12px;align-items:center;margin-top:0.5rem}
+.repo-lang{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.repo-lang::before{content:'';width:10px;height:10px;border-radius:50%;background:var(--lc,#58a6ff)}
+.repo-stat{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px}
+.badge{display:inline-block;background:rgba(88,166,255,0.15);color:var(--accent);font-size:10px;padding:2px 8px;border-radius:50px;font-family:var(--mono);margin-left:auto}
+.badge.fork{background:rgba(63,185,80,0.15);color:var(--accent2)}
+
+/* HIDDEN */
+.hidden{display:none}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:2rem;text-align:center;color:var(--muted);font-size:13px}
+footer a{color:var(--accent);text-decoration:none}
+
+/* LANG COLORS */
+.lc-js{--lc:#f1e05a} .lc-python{--lc:#3572A5} .lc-html{--lc:#e34c26}
+.lc-css{--lc:#563d7c} .lc-ts{--lc:#2b7489} .lc-java{--lc:#b07219}
+.lc-cpp{--lc:#f34b7d} .lc-c{--lc:#555555} .lc-rust{--lc:#dea584}
+.lc-go{--lc:#00ADD8} .lc-ruby{--lc:#701516} .lc-php{--lc:#4F5D95}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">git<span>lens</span><span style="color:var(--accent2)">.</span></div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#app">Try it</a>
+    <a href="https://github.com" target="_blank">GitHub</a>
+  </div>
+  <button class="nav-cta" onclick="document.getElementById('app').scrollIntoView({behavior:'smooth'})">Try for free →</button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">🔍 Powered by GitHub REST API v3</div>
+  <h1>Explore any <span class="accent">GitHub profile</span> in seconds</h1>
+  <p class="hero-sub">Search any developer's username and instantly see their repositories, top languages, contribution stats, and more — all in one clean dashboard.</p>
+  <div class="hero-search" id="heroSearch">
+    <input type="text" id="heroInput" placeholder="Enter a GitHub username..." onkeydown="if(event.key==='Enter')search()"/>
+    <button onclick="search()">Search →</button>
+  </div>
+  <p class="hero-hint">Try: <span onclick="quickSearch('torvalds')">torvalds</span> · <span onclick="quickSearch('gvanrossum')">gvanrossum</span> · <span onclick="quickSearch('sindresorhus')">sindresorhus</span></p>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="section-label">What you get</div>
+  <h2 class="section-title">Everything about a developer, instantly</h2>
+  <p class="section-sub">No login. No API key. Just search and explore.</p>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feat-icon">👤</div>
+      <div class="feat-title">Full profile snapshot</div>
+      <div class="feat-desc">Name, bio, location, company, website, followers, following — all at a glance.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feat-icon">📦</div>
+      <div class="feat-title">Top repositories</div>
+      <div class="feat-desc">Most starred public repos with descriptions, language, stars, and forks.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feat-icon">🥧</div>
+      <div class="feat-title">Language breakdown</div>
+      <div class="feat-desc">Visual donut chart showing which programming languages the developer uses most.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feat-icon">📊</div>
+      <div class="feat-title">Account stats</div>
+      <div class="feat-desc">Public repos, gists, followers, following — with direct links to their GitHub.</div>
+    </div>
+  </div>
+</section>
+
+<!-- APP -->
+<section class="app-section" id="app">
+  <div class="section-label">Live tool</div>
+  <h2 class="section-title">Find any developer</h2>
+  <p class="section-sub" style="margin-bottom:1.5rem">Search a GitHub username below to pull up their full profile dashboard.</p>
+
+  <div class="hero-search" style="max-width:460px;margin:0 0 1.5rem">
+    <input type="text" id="appInput" placeholder="GitHub username..." onkeydown="if(event.key==='Enter')search()"/>
+    <button onclick="search()">Search →</button>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+  <div class="loader" id="loader">
+    Fetching profile data...
+    <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+  </div>
+
+  <div id="result" class="hidden">
+    <!-- Profile + chart -->
+    <div class="profile-grid">
+      <div class="profile-card">
+        <img class="avatar" id="avatar" src="" alt="avatar"/>
+        <div class="profile-name" id="pName"></div>
+        <div class="profile-login" id="pLogin"></div>
+        <div class="profile-bio" id="pBio"></div>
+        <div class="profile-meta" id="pMeta"></div>
+        <div class="profile-stats">
+          <div class="stat-pill"><div class="stat-pill-val" id="sRepos"></div><div class="stat-pill-label">Repos</div></div>
+          <div class="stat-pill"><div class="stat-pill-val" id="sFollowers"></div><div class="stat-pill-label">Followers</div></div>
+          <div class="stat-pill"><div class="stat-pill-val" id="sFollowing"></div><div class="stat-pill-label">Following</div></div>
+          <div class="stat-pill"><div class="stat-pill-val" id="sGists"></div><div class="stat-pill-label">Gists</div></div>
+        </div>
+        <a class="profile-link" id="pLink" href="#" target="_blank">View on GitHub ↗</a>
+      </div>
+
+      <div class="right-panel">
+        <div class="panel">
+          <div class="panel-title">Top languages</div>
+          <div class="lang-chart-wrap"><canvas id="langChart"></canvas></div>
+          <div class="lang-legend" id="langLegend"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Member since</div>
+          <div id="pJoined" style="font-size:24px;font-weight:700;font-family:var(--mono);color:var(--accent)"></div>
+          <div id="pJoinedSub" style="font-size:13px;color:var(--muted);margin-top:4px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Repos -->
+    <div class="panel" style="margin-bottom:0">
+      <div class="panel-title">Top repositories by stars</div>
+      <div class="repos-grid" id="reposGrid"></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Built with the <a href="https://docs.github.com/en/rest" target="_blank">GitHub REST API</a> · No authentication required · Made by <a href="#" id="footerLink">you</a> 🚀
+</footer>
+
+<script>
+const LANG_COLORS = {
+  JavaScript:'#f1e05a',TypeScript:'#2b7489',Python:'#3572A5',HTML:'#e34c26',
+  CSS:'#563d7c',Java:'#b07219','C++':'#f34b7d',C:'#555555',Rust:'#dea584',
+  Go:'#00ADD8',Ruby:'#701516',PHP:'#4F5D95','C#':'#178600',Swift:'#ffac45',
+  Kotlin:'#A97BFF',Shell:'#89e051',Vue:'#41b883',Dart:'#00B4AB'
+};
+
+let chartInstance = null;
+
+function quickSearch(u){ document.getElementById('heroInput').value=u; document.getElementById('appInput').value=u; document.getElementById('app').scrollIntoView({behavior:'smooth'}); setTimeout(search,400); }
+
+async function search(){
+  const input = document.getElementById('appInput').value.trim() || document.getElementById('heroInput').value.trim();
+  if(!input) return;
+  document.getElementById('appInput').value = input;
+  document.getElementById('heroInput').value = input;
+
+  const err = document.getElementById('errorBox');
+  const loader = document.getElementById('loader');
+  const result = document.getElementById('result');
+  err.style.display='none'; result.classList.add('hidden'); loader.style.display='block';
+  document.getElementById('app').scrollIntoView({behavior:'smooth'});
+
+  try{
+    const [userRes, reposRes] = await Promise.all([
+      fetch(`https://api.github.com/users/${encodeURIComponent(input)}`),
+      fetch(`https://api.github.com/users/${encodeURIComponent(input)}/repos?sort=stars&per_page=30`)
+    ]);
+
+    if(!userRes.ok) throw new Error(userRes.status===404?`No GitHub user found for "${input}". Check the spelling.`:'GitHub API rate limit hit. Wait a minute and try again.');
+
+    const user = await userRes.json();
+    const repos = await reposRes.json();
+
+    loader.style.display='none';
+
+    // Profile
+    document.getElementById('avatar').src = user.avatar_url;
+    document.getElementById('pName').textContent = user.name || user.login;
+    document.getElementById('pLogin').textContent = '@'+user.login;
+    document.getElementById('pBio').textContent = user.bio || 'No bio provided.';
+    document.getElementById('pLink').href = user.html_url;
+    document.getElementById('sRepos').textContent = user.public_repos;
+    document.getElementById('sFollowers').textContent = fmt(user.followers);
+    document.getElementById('sFollowing').textContent = user.following;
+    document.getElementById('sGists').textContent = user.public_gists;
+
+    // Meta
+    const metaItems = [
+      user.company && {icon:'🏢',text:user.company},
+      user.location && {icon:'📍',text:user.location},
+      user.blog && {icon:'🔗',text:user.blog,link:user.blog.startsWith('http')?user.blog:'https://'+user.blog},
+      user.email && {icon:'✉️',text:user.email},
+      user.twitter_username && {icon:'🐦',text:'@'+user.twitter_username}
+    ].filter(Boolean);
+    document.getElementById('pMeta').innerHTML = metaItems.map(m=>
+      `<div class="profile-meta-item">${m.icon} ${m.link?`<a href="${m.link}" target="_blank" style="color:var(--accent);text-decoration:none">${m.text}</a>`:m.text}</div>`
+    ).join('');
+
+    // Joined
+    const joined = new Date(user.created_at);
+    document.getElementById('pJoined').textContent = joined.getFullYear();
+    const years = new Date().getFullYear() - joined.getFullYear();
+    document.getElementById('pJoinedSub').textContent = `${joined.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})} · ${years} year${years!==1?'s':''} on GitHub`;
+
+    // Language chart
+    const langCount = {};
+    repos.forEach(r=>{ if(r.language) langCount[r.language]=(langCount[r.language]||0)+1; });
+    const sorted = Object.entries(langCount).sort((a,b)=>b[1]-a[1]).slice(0,7);
+    const labels = sorted.map(x=>x[0]);
+    const data = sorted.map(x=>x[1]);
+    const colors = labels.map(l=>LANG_COLORS[l]||'#8b949e');
+
+    if(chartInstance) chartInstance.destroy();
+    const ctx = document.getElementById('langChart').getContext('2d');
+    chartInstance = new Chart(ctx,{
+      type:'doughnut',
+      data:{labels,datasets:[{data,backgroundColor:colors,borderColor:'#161b22',borderWidth:3,hoverOffset:6}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw} repos`}}},cutout:'65%'}
+    });
+
+    document.getElementById('langLegend').innerHTML = sorted.map(([lang],i)=>
+      `<div class="lang-dot" style="--c:${colors[i]}">${lang}</div>`
+    ).join('');
+
+    // Repos
+    const topRepos = repos.filter(r=>!r.fork).slice(0,6);
+    document.getElementById('reposGrid').innerHTML = topRepos.map(r=>`
+      <a class="repo-card" href="${r.html_url}" target="_blank">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div class="repo-name">${r.name}</div>
+          ${r.fork?'<span class="badge fork">fork</span>':''}
+          ${r.archived?'<span class="badge">archived</span>':''}
+        </div>
+        <div class="repo-desc">${r.description||'No description provided.'}</div>
+        <div class="repo-footer">
+          ${r.language?`<span class="repo-lang" style="--lc:${LANG_COLORS[r.language]||'#8b949e'}">${r.language}</span>`:''}
+          <span class="repo-stat">⭐ ${fmt(r.stargazers_count)}</span>
+          <span class="repo-stat">🍴 ${fmt(r.forks_count)}</span>
+        </div>
+      </a>
+    `).join('');
+
+    result.classList.remove('hidden');
+  } catch(e){
+    loader.style.display='none';
+    err.textContent = e.message || 'Something went wrong. Try again.';
+    err.style.display='block';
+  }
+}
+
+function fmt(n){ return n>=1000?(n/1000).toFixed(1)+'k':n; }
+</script>
+</body>
+</html>
